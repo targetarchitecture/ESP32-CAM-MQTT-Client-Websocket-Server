@@ -5,32 +5,23 @@
 #include <WebServer.h>
 #include <WebSocketsServer.h>
 #include <Wire.h>
-#include <Adafruit_GFX.h>
-#include <Adafruit_SSD1306.h>
-#include <Adafruit_I2CDevice.h>
 #include <PubSubClient.h>
 #include "soc/soc.h"
 #include "soc/rtc_cntl_reg.h"
 #include <string>
 #include <regex>
-#include "MovingAverage.h"
+//#include "MovingAverage.h"
 
-// Select camera model - LILYGO® TTGO T-Journal
-#define CAMERA_MODEL_TTGO_T_JOURNAL
+// Select camera model - ESP32-CAM (AI Thinker)
+#define CAMERA_MODEL_AI_THINKER
 #include "camera_pins.h"
 
-// Set the OLED parameters
-#define SCREEN_WIDTH 128
-#define SCREEN_HEIGHT 32
-#define I2C_SDA 14
-#define I2C_SCL 13
-
 //averaging calculations
-#define framesToAvg 32
-MovingAverage<uint8_t, framesToAvg> loopAvg;
-MovingAverage<uint8_t, framesToAvg> mqttAvg;
-MovingAverage<uint8_t, framesToAvg> wsAvg;
-uint32_t timeToCompleteMQTTMs = 0;
+//#define framesToAvg 32
+// MovingAverage<uint8_t, framesToAvg> loopAvg;
+// MovingAverage<uint8_t, framesToAvg> mqttAvg;
+// MovingAverage<uint8_t, framesToAvg> wsAvg;
+//uint32_t timeToCompleteMQTTMs = 0;
 int8_t previousWebSocketClients = -1;
 ulong previousMQTTmillis = 0;
 uint8_t MQTTFPS = 0;
@@ -45,8 +36,6 @@ ulong MQTTFPSmillis = millis();
 WebSocketsServer webSocket = WebSocketsServer(webSocketPort);
 WebServer server(webServerPort);
 WiFiClient client;
-
-Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
 
 //MQTT definitions
 PubSubClient MQTTClient;
@@ -80,16 +69,6 @@ void setup(void)
   Serial.begin(115200);
   Serial.setDebugOutput(true);
 
-  // Init I2C bus & OLED
-  Wire.begin(I2C_SDA, I2C_SCL);
-
-  if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C, false, false))
-  {
-    Serial.println(F("SSD1306 allocation failed"));
-    delay(10000);
-    ESP.restart();
-  }
-
   //WIFI start up
   Serial.printf("Connecting to %s\n", WIFI_SSID);
   WiFi.mode(WIFI_STA);
@@ -104,13 +83,6 @@ void setup(void)
 
   Serial.print("Connected! IP address: ");
   Serial.println(WiFi.localIP());
-
-  display.clearDisplay();
-  display.setTextSize(1);
-  display.setTextColor(WHITE);
-  display.setCursor(5, 5);
-  display.print(WiFi.localIP());
-  display.display();
 
   int cameraInitState = initCamera();
 
@@ -203,7 +175,7 @@ void loop(void)
     // save the last time an MQTT message was sent
     previousMQTTmillis = currentMillis;
 
-    int64_t MQTT_start = esp_timer_get_time();
+    //int64_t MQTT_start = esp_timer_get_time();
 
     if (MQTTClient.connected())
     {
@@ -217,9 +189,9 @@ void loop(void)
       }
     }
 
-    int64_t MQTT_end = esp_timer_get_time();
+    //int64_t MQTT_end = esp_timer_get_time();
 
-    timeToCompleteMQTTMs = mqttAvg.add((MQTT_end - MQTT_start) / 1000);
+   // timeToCompleteMQTTMs = mqttAvg.add((MQTT_end - MQTT_start) / 1000);
   }
 
   currentMillis = millis();
@@ -240,13 +212,13 @@ void loop(void)
     MQTTFPS = MQTTFPS + 1;
   }
 
-  int64_t ws_start = esp_timer_get_time();
+ // int64_t ws_start = esp_timer_get_time();
 
   //broadcast to all connected clients
   webSocket.broadcastBIN(fb->buf, fb_len);
 
-  int64_t ws_end = esp_timer_get_time();
-  uint8_t timeToCompleteWSMs = wsAvg.add((ws_end - ws_start) / 1000);
+ // int64_t ws_end = esp_timer_get_time();
+ // uint8_t timeToCompleteWSMs = wsAvg.add((ws_end - ws_start) / 1000);
 
   //return the frame buffer back to be reused
   esp_camera_fb_return(fb);
@@ -270,18 +242,8 @@ void loop(void)
   }
 
   //do loop calculations and display
-  int64_t loop_end = esp_timer_get_time();
-  uint8_t timeToCompleteLoopMs = loopAvg.add((loop_end - loop_start) / 1000);
-
-  display.clearDisplay();
-  display.setTextSize(1);
-  display.setTextColor(WHITE);
-  display.setCursor(0, 0);
-  display.printf("JPEG: %u Kb\n", (uint32_t)(fb_len) / 1024);
-  display.printf("MQTT: %u ms WS: %u ms\n", timeToCompleteMQTTMs, timeToCompleteWSMs);
-  display.printf("LOOP TIME: %u ms\n", timeToCompleteLoopMs);
-  display.printf("CLIENTS: %u  FPS: %u\n", webSocket.connectedClients(), FPS);
-  display.display();
+ // int64_t loop_end = esp_timer_get_time();
+  //uint8_t timeToCompleteLoopMs = loopAvg.add((loop_end - loop_start) / 1000);
 
   if (previousWebSocketClients != webSocket.connectedClients())
   {
