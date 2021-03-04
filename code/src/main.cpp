@@ -116,17 +116,17 @@ void setup(void)
   String url = WiFi.localIP().toString();
   url.concat("/");
 
-  MQTTClient.publish(MQTT_URL_TOPIC, url.c_str());
+  MQTTClient.publish(MQTT_URL_TOPIC, url.c_str(),true);
 
   url = WiFi.localIP().toString();
   url.concat("/cocossd");
 
-  MQTTClient.publish(MQTT_COCOSSD_TOPIC, url.c_str());
+  MQTTClient.publish(MQTT_COCOSSD_TOPIC, url.c_str(),true);
 
   url = WiFi.localIP().toString();
   url.concat("/fullscreen");
 
-  MQTTClient.publish(MQTT_FULLSCREEN_TOPIC, url.c_str());
+  MQTTClient.publish(MQTT_FULLSCREEN_TOPIC, url.c_str(),true);
 
   //define web server endpoints and 404
   server.on("/", handleRoot);
@@ -158,7 +158,7 @@ void loop(void)
 
   if (!fb)
   {
-    MQTTClient.publish(MQTT_ERROR_TOPIC, "Frame buffer could not be acquired");
+    MQTTClient.publish(MQTT_ERROR_TOPIC, "Frame buffer could not be acquired",true);
 
     Serial.println("Frame buffer could not be acquired");
     delay(10000);
